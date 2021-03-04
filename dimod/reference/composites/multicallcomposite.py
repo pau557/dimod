@@ -36,18 +36,19 @@ class MultiCallComposite(Sampler, Composite):
             :obj:`.SampleSet`
 
         """
-
         # make a main response
         responses = []
         if not spin_reversals:
             for call_kwargs in call_kwargs_list:
                 responses.append(self.child.sample(bqm, **call_kwargs, **kwargs))
-            return concatenate(responses)
+            yield
+            yield concatenate(responses)
         else:
-            flipped_bqm = bqm.copy()
+            flipped_bqm = bqm
             transform = {v: False for v in bqm.variables}
 
             for call_kwargs in call_kwargs_list:
+                flipped_bqm = flipped_bqm.copy()
                 # flip each variable with a 50% chance
                 for v in bqm:
                     if random() > .5:
@@ -69,3 +70,4 @@ class MultiCallComposite(Sampler, Composite):
                     flipped_response.record.sample[:, tf_idxs] = 1 - flipped_response.record.sample[:, tf_idxs]
 
             yield concatenate([flipped_response for flipped_response, transform in responses])
+
